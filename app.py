@@ -339,6 +339,28 @@ def edit_raffle(raffle_id):
     
     return render_template('admin/edit_raffle.html', raffle=raffle)
 
+def ensure_database_initialized() -> None:
+    """Create DB tables and ensure default admin exists.
+
+    This runs at import time so it applies both in local (flask run/python)
+    and in production under Gunicorn (Render/Docker).
+    """
+    with app.app_context():
+        db.create_all()
+        existing_admin = User.query.filter_by(username='Admin').first()
+        if existing_admin is None:
+            admin = User(
+                username='Admin',
+                email='admin@rifas.com',
+                password_hash=generate_password_hash('11153920'),
+                is_admin=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+# Ensure DB schema/admin are present when the app is imported by Gunicorn
+ensure_database_initialized()
+
 def _cache_dir() -> str:
     cache_dir = os.path.join(app.root_path, 'static', 'cache', 'raffles')
     os.makedirs(cache_dir, exist_ok=True)
