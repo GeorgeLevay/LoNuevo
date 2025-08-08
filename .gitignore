@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+instance/
+rifas.db
+static/cache/
+run.out
+run.err

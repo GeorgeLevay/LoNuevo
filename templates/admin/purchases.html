@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Compras - Sistema de Rifas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-shopping-cart me-2"></i>Gestionar Compras
+            </h2>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtros
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Todos los estados</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="approved">Aprobadas</option>
+                            <option value="rejected">Rechazadas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Método de pago</label>
+                        <select class="form-select" id="paymentFilter">
+                            <option value="">Todos los métodos</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="paypal">PayPal</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Fecha desde</label>
+                        <input type="date" class="form-control" id="dateFrom">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Fecha hasta</label>
+                        <input type="date" class="form-control" id="dateTo">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="fas fa-search me-1"></i>Aplicar Filtros
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de compras pendientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2 text-warning"></i>Compras Pendientes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pending_purchases %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="pendingTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Comprador</th>
+                                    <th>Rifa</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                    <th>Banco</th>
+                                    <th>Referencia</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in pending_purchases %}
+                                <tr>
+                                    <td>#{{ purchase.id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user me-2 text-primary"></i>
+                                            <div>
+                                                <strong>{{ purchase.buyer_name }} {{ purchase.buyer_lastname }}</strong>
+                                                <br>
+                                                <small class="text-muted">Cédula: {{ purchase.buyer_cedula }}</small>
+                                                <br>
+                                                <small class="text-muted">Tel: {{ purchase.buyer_phone }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ purchase.raffle.title }}</strong>
+                                            <br>
+                                            <small class="text-muted">${{ "%.2f"|format(purchase.raffle.price) }} por boleto</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info fs-6">{{ purchase.quantity }}</span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">${{ "%.2f"|format(purchase.total_amount) }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ purchase.bank_name }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge text-bg-secondary">
+                                            <i class="fas fa-hashtag me-1"></i>{{ purchase.reference_number }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning fs-6">
+                                            <i class="fas fa-clock me-1"></i>Pendiente
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ purchase.created_at.strftime('%d/%m/%Y') }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ purchase.created_at.strftime('%H:%M') }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('approve_purchase', purchase_id=purchase.id) }}" 
+                                               class="btn btn-sm btn-success" 
+                                               onclick="return confirm('¿Confirmar aprobación de la compra #{{ purchase.id }}?')"
+                                               title="Aprobar compra">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            <a href="{{ url_for('reject_purchase', purchase_id=purchase.id) }}" 
+                                               class="btn btn-sm btn-danger"
+                                               onclick="return confirm('¿Confirmar rechazo de la compra #{{ purchase.id }}?')"
+                                               title="Rechazar compra">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">No hay compras pendientes</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de compras aprobadas / historial -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success bg-opacity-10">
+                <h5 class="mb-0">
+                    <i class="fas fa-check me-2 text-success"></i>Historial de Compras Aprobadas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if approved_purchases %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="approvedTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Comprador</th>
+                                    <th>Rifa</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                    <th>Banco</th>
+                                    <th>Referencia</th>
+                                    <th>Fecha Aprobación</th>
+                                    <th>Números Asignados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in approved_purchases %}
+                                <tr>
+                                    <td>#{{ purchase.id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user me-2 text-primary"></i>
+                                            <div>
+                                                <strong>{{ purchase.buyer_name }} {{ purchase.buyer_lastname }}</strong>
+                                                <br>
+                                                <small class="text-muted">Cédula: {{ purchase.buyer_cedula }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><strong>{{ purchase.raffle.title }}</strong></td>
+                                    <td><span class="badge bg-info fs-6">{{ purchase.quantity }}</span></td>
+                                    <td><strong class="text-success">${{ "%.2f"|format(purchase.total_amount) }}</strong></td>
+                                    <td><span class="badge bg-info">{{ purchase.bank_name }}</span></td>
+                                    <td>
+                                        <span class="badge text-bg-secondary">
+                                            <i class="fas fa-hashtag me-1"></i>{{ purchase.reference_number }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if purchase.approved_at %}
+                                            <div>
+                                                <strong>{{ purchase.approved_at.strftime('%d/%m/%Y') }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ purchase.approved_at.strftime('%H:%M') }}</small>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if purchase.assigned_tickets %}
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-primary btn-show-tickets"
+                                                data-purchase-id="{{ purchase.id }}"
+                                                data-buyer="{{ purchase.buyer_name }} {{ purchase.buyer_lastname }}"
+                                                data-raffle="{{ purchase.raffle.title }}"
+                                                data-tickets='{{ purchase.assigned_tickets }}'>
+                                                <i class="fas fa-list-ol me-1"></i>Mostrar números asignados
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">No hay compras aprobadas aún</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Modal para mostrar números asignados
+document.addEventListener('click', function (ev) {
+  const btn = ev.target.closest('.btn-show-tickets');
+  if (!btn) return;
+  const ticketsJson = btn.getAttribute('data-tickets');
+  let tickets = [];
+  try { tickets = JSON.parse(ticketsJson); } catch (e) { tickets = []; }
+  const buyer = btn.getAttribute('data-buyer') || '';
+  const raffle = btn.getAttribute('data-raffle') || '';
+
+  const modalHtml = `
+  <div class="modal fade" id="ticketsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-list-ol me-2"></i>Números asignados</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 text-muted">
+            <strong>Comprador:</strong> ${buyer}<br/>
+            <strong>Rifa:</strong> ${raffle}
+          </div>
+          <div class="d-flex flex-wrap gap-2" id="ticketsContainer"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Eliminar modal previo si existe
+  const existing = document.getElementById('ticketsModal');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  // Pintar chips
+  const container = document.getElementById('ticketsContainer');
+  tickets.forEach(n => {
+    const span = document.createElement('span');
+    span.className = 'badge text-bg-primary';
+    span.textContent = n;
+    container.appendChild(span);
+  });
+
+  const modalEl = document.getElementById('ticketsModal');
+  const bsModal = new bootstrap.Modal(modalEl);
+  bsModal.show();
+});
+function applyFilters() {
+    const paymentFilter = document.getElementById('paymentFilter').value;
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+
+    const filterTable = (selector, dateColIndex) => {
+        const rows = document.querySelectorAll(selector + ' tbody tr');
+        rows.forEach(row => {
+            let show = true;
+            if (paymentFilter && (row.dataset?.payment || '') !== paymentFilter) {
+                show = false;
+            }
+            // Filtrado de fecha básico (solo marca todos como visibles por ahora)
+            row.style.display = show ? '' : 'none';
+        });
+    };
+    filterTable('#pendingTable', 8);
+    filterTable('#approvedTable', 8);
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('paymentFilter').value = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    ['#pendingTable', '#approvedTable'].forEach(sel => {
+        document.querySelectorAll(sel + ' tbody tr').forEach(r => r.style.display = '');
+    });
+}
+</script>
+{% endblock %} 

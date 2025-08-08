@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Compras - Sistema de Rifas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-shopping-bag me-2"></i>Mis Compras
+            </h2>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i>Volver a Rifas
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if purchases %}
+    <div class="row">
+        {% for purchase in purchases %}
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="card-title">{{ purchase.raffle.title }}</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <i class="fas fa-ticket-alt text-primary me-2"></i>
+                                        <strong>Cantidad:</strong> {{ purchase.quantity }} boleto{{ 's' if purchase.quantity > 1 else '' }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-dollar-sign text-success me-2"></i>
+                                        <strong>Total:</strong> ${{ "%.2f"|format(purchase.total_amount) }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <i class="fas fa-credit-card text-info me-2"></i>
+                                        <strong>Método de pago:</strong> {{ purchase.payment_method|title }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-calendar text-warning me-2"></i>
+                                        <strong>Fecha:</strong> {{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if purchase.status == 'pending' %}
+                                <span class="badge bg-warning fs-6">
+                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                </span>
+                                <p class="text-muted mt-2 mb-0">
+                                    <small>Esperando aprobación del administrador</small>
+                                </p>
+                            {% elif purchase.status == 'approved' %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check me-1"></i>Aprobada
+                                </span>
+                                <p class="text-muted mt-2 mb-0">
+                                    <small>Aprobada el {{ purchase.approved_at.strftime('%d/%m/%Y') }}</small>
+                                </p>
+                            {% elif purchase.status == 'rejected' %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="fas fa-times me-1"></i>Rechazada
+                                </span>
+                                <p class="text-muted mt-2 mb-0">
+                                    <small>Rechazada el {{ purchase.approved_at.strftime('%d/%m/%Y') }}</small>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('raffle_detail', raffle_id=purchase.raffle.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Ver Rifa
+                            </a>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            {% if purchase.status == 'approved' %}
+                                <span class="text-success">
+                                    <i class="fas fa-ticket-alt me-1"></i>¡Boletos confirmados!
+                                </span>
+                            {% elif purchase.status == 'rejected' %}
+                                <span class="text-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Compra rechazada
+                                </span>
+                            {% else %}
+                                <span class="text-warning">
+                                    <i class="fas fa-hourglass-half me-1"></i>En proceso de revisión
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Resumen de compras -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie me-2"></i>Resumen de Compras
+                    </h5>
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ purchases|length }}</h4>
+                                <small class="text-muted">Total de compras</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-warning">{{ purchases|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-success">{{ purchases|selectattr('status', 'equalto', 'approved')|list|length }}</h4>
+                                <small class="text-muted">Aprobadas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-danger">{{ purchases|selectattr('status', 'equalto', 'rejected')|list|length }}</h4>
+                            <small class="text-muted">Rechazadas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-bag fa-4x text-muted mb-3"></i>
+                <h3 class="text-muted">No tienes compras registradas</h3>
+                <p class="text-muted">¡Participa en nuestras rifas para ver tus compras aquí!</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-ticket-alt me-1"></i>Ver Rifas Disponibles
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %} 

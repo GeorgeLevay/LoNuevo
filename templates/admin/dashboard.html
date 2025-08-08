@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrativo - Sistema de Rifas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-chart-bar me-2"></i>Dashboard Administrativo
+            </h2>
+            <div>
+                <a href="{{ url_for('admin_purchases') }}" class="btn btn-success me-2">
+                    <i class="fas fa-shopping-cart me-1"></i>Gestionar Compras
+                </a>
+                <a href="{{ url_for('create_raffle') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Crear Rifa
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ total_raffles }}</h4>
+                        <p class="mb-0">Rifas Totales</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-ticket-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ total_users }}</h4>
+                        <p class="mb-0">Usuarios Registrados</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ total_purchases }}</h4>
+                        <p class="mb-0">Compras Totales</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ pending_purchases }}</h4>
+                        <p class="mb-0">Compras Pendientes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('admin_purchases') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-check-circle me-2"></i>Aprobar Compras
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('admin_raffles') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-ticket-alt me-2"></i>Gestionar Rifas
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('create_raffle') }}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-plus me-2"></i>Crear Nueva Rifa
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-eye me-2"></i>Ver Sitio Público
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compras recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Compras Recientes
+                </h5>
+                <a href="{{ url_for('admin_purchases') }}" class="btn btn-sm btn-outline-primary">
+                    Ver Todas
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_purchases %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Rifa</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in recent_purchases %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ purchase.user.username }}
+                                    </td>
+                                    <td>{{ purchase.raffle.title }}</td>
+                                    <td>{{ purchase.quantity }}</td>
+                                    <td>${{ "%.2f"|format(purchase.total_amount) }}</td>
+                                    <td>
+                                        {% if purchase.status == 'pending' %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% elif purchase.status == 'approved' %}
+                                            <span class="badge bg-success">Aprobada</span>
+                                        {% elif purchase.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rechazada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if purchase.status == 'pending' %}
+                                            <a href="{{ url_for('approve_purchase', purchase_id=purchase.id) }}" 
+                                               class="btn btn-sm btn-success me-1" 
+                                               onclick="return confirm('¿Confirmar aprobación de esta compra?')">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            <a href="{{ url_for('reject_purchase', purchase_id=purchase.id) }}" 
+                                               class="btn btn-sm btn-danger"
+                                               onclick="return confirm('¿Confirmar rechazo de esta compra?')">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">Procesada</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay compras recientes</h5>
+                        <p class="text-muted">Las compras aparecerán aquí cuando los usuarios realicen pedidos.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

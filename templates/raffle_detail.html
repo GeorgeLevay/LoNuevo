@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}{{ raffle.title }} - Sistema de Rifas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            {% if raffle.image_url and raffle.image_url != '' %}
+                <img src="{{ url_for('raffle_image', raffle_id=raffle.id) }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/placeholder.svg') }}';" class="card-img-top" alt="{{ raffle.title }}" style="height: 400px; width: 100%; object-fit: cover; object-position: center;">
+            {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 400px; width: 100%;">
+                    <i class="fas fa-ticket-alt fa-5x text-muted"></i>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <h2 class="card-title">{{ raffle.title }}</h2>
+                <p class="card-text">{{ raffle.description }}</p>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-dollar-sign text-success me-2"></i>
+                            <strong>Precio por boleto:</strong>
+                            <span class="ms-2 text-success fs-5">${{ "%.2f"|format(raffle.price) }}</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-calendar text-primary me-2"></i>
+                            <strong>Fecha de finalización:</strong>
+                            <span class="ms-2">{{ raffle.end_date.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-ticket-alt text-warning me-2"></i>
+                            <strong>Boletos disponibles:</strong>
+                            <span class="ms-2 text-primary fs-5">{{ raffle.available_tickets }}/{{ raffle.total_tickets }}</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-clock text-info me-2"></i>
+                            <strong>Creada:</strong>
+                            <span class="ms-2">{{ raffle.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="progress mb-3" style="height: 15px;">
+                    {% set percentage = ((raffle.total_tickets - raffle.available_tickets) / raffle.total_tickets) * 100 %}
+                    <div class="progress-bar bg-success" style="width: {{ percentage }}%">
+                        {{ "%.1f"|format(percentage) }}% vendidos
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        {% if raffle.available_tickets > 0 %}
+            <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                <div class="card-header bg-primary text-white text-center" style="border-radius: 20px 20px 0 0;">
+                    <h4 class="mb-0">
+                        <i class="fas fa-ticket-alt me-2"></i>¡PARTICIPAR AHORA!
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('buy_tickets') }}">
+                        <input type="hidden" name="raffle_id" value="{{ raffle.id }}">
+                        
+                        <!-- Cantidad de boletos -->
+                        <div class="mb-4">
+                            <label for="quantity" class="form-label fw-bold">
+                                <i class="fas fa-ticket-alt me-1"></i>Cantidad de boletos
+                            </label>
+                            <select class="form-select form-select-lg" id="quantity" name="quantity" required>
+                                {% if raffle.available_tickets >= 10 %}
+                                    {% for i in range(1, 11) %}
+                                        <option value="{{ i }}">{{ i }} boleto{% if i > 1 %}s{% endif %}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for i in range(1, raffle.available_tickets + 1) %}
+                                        <option value="{{ i }}">{{ i }} boleto{% if i > 1 %}s{% endif %}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <!-- Datos personales -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="fas fa-user me-1"></i>Datos Personales
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label for="buyer_name" class="form-label">Nombre *</label>
+                                    <input type="text" class="form-control" id="buyer_name" name="buyer_name" required>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label for="buyer_lastname" class="form-label">Apellido *</label>
+                                    <input type="text" class="form-control" id="buyer_lastname" name="buyer_lastname" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label for="buyer_cedula" class="form-label">Cédula *</label>
+                                    <input type="text" class="form-control" id="buyer_cedula" name="buyer_cedula" required>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label for="buyer_phone" class="form-label">Teléfono *</label>
+                                    <input type="tel" class="form-control" id="buyer_phone" name="buyer_phone" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Datos de pago -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="fas fa-credit-card me-1"></i>Datos de Pago
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label for="bank_name" class="form-label">Banco *</label>
+                                <select class="form-select" id="bank_name" name="bank_name" required>
+                                    <option value="">Selecciona tu banco</option>
+                                    <option value="Banco de Venezuela">Banco de Venezuela</option>
+                                    <option value="Banesco">Banesco</option>
+                                    <option value="BBVA Provincial">BBVA Provincial</option>
+                                    <option value="Banco Mercantil">Banco Mercantil</option>
+                                    <option value="Banco Bicentenario">Banco Bicentenario</option>
+                                    <option value="Banco del Tesoro">Banco del Tesoro</option>
+                                    <option value="Banco de la Fuerza Armada">Banco de la Fuerza Armada</option>
+                                    <option value="Banco Exterior">Banco Exterior</option>
+                                    <option value="Banco Caroní">Banco Caroní</option>
+                                    <option value="Banco Plaza">Banco Plaza</option>
+                                    <option value="Banco Activo">Banco Activo</option>
+                                    <option value="Banco Sofitasa">Banco Sofitasa</option>
+                                    <option value="Banco Fondo Común">Banco Fondo Común</option>
+                                    <option value="Banco Nacional de Crédito">Banco Nacional de Crédito</option>
+                                    <option value="Banco del Caribe">Banco del Caribe</option>
+                                    <option value="Banco Agrícola de Venezuela">Banco Agrícola de Venezuela</option>
+                                    <option value="Banco de Desarrollo del Microempresario">Banco de Desarrollo del Microempresario</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="reference_number" class="form-label">Número de Referencia *</label>
+                                <input type="text" class="form-control" id="reference_number" name="reference_number" 
+                                       placeholder="Ej: 123456789" required>
+                                <div class="form-text">Número de referencia de tu transferencia bancaria</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen de compra -->
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-1"></i>Resumen de Compra
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <strong>Precio por boleto:</strong><br>
+                                    <span class="text-success fs-5">${{ "%.2f"|format(raffle.price) }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Total estimado:</strong><br>
+                                    <span class="text-primary fs-5" id="total-amount">${{ "%.2f"|format(raffle.price) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botón de compra -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-shopping-cart me-2"></i>ENVIAR SOLICITUD
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Tu solicitud será revisada por el administrador
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                <div class="card-body text-center p-5">
+                    <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                    <h4 class="text-danger fw-bold">¡AGOTADO!</h4>
+                    <p class="text-muted">Todos los boletos han sido vendidos para esta rifa.</p>
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="card shadow mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Información Importante
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Los boletos se asignan automáticamente
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Pago seguro y verificado
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Notificación inmediata del ganador
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Soporte 24/7 disponible
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantitySelect = document.getElementById('quantity');
+    const totalAmount = document.getElementById('total-amount');
+    const pricePerTicket = {{ raffle.price }};
+    
+    function updateTotal() {
+        const quantity = parseInt(quantitySelect.value);
+        const total = quantity * pricePerTicket;
+        totalAmount.textContent = '$' + total.toFixed(2);
+    }
+    
+    quantitySelect.addEventListener('change', updateTotal);
+    updateTotal(); // Initial calculation
+});
+</script>
+{% endblock %} 
